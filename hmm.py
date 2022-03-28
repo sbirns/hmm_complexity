@@ -252,6 +252,9 @@ class HiddenMarkovModel:
         for t in range(L):
             capture[t, :, obs_idx[t]] = 1.0
 
+        if not np.all(gamma[:-1].sum(axis=0)):
+            return score
+
         pi = gamma[0]
         T = digamma.sum(axis=0) / gamma[:-1].sum(axis=0).reshape(-1, 1)
         E = (capture * gamma[:, :, np.newaxis]).sum(axis=0) / gamma.sum(axis=0).reshape(-1, 1)
@@ -259,20 +262,22 @@ class HiddenMarkovModel:
         self.layer.pi = ProbabilityVector.from_numpy(pi, self.layer.states)
         self.layer.T = ProbabilityMatrix.from_numpy(T, self.layer.states, self.layer.states)
         self.layer.E = ProbabilityMatrix.from_numpy(E, self.layer.states, self.layer.observables)
-            
+
         return score
 
-    def train(self, observations: list, epochs: int, max_score=None):
-        # instead of using a tolerance (score increase per iteration), just cap how accurate the hmm can be
+    def train(self, observations: list, epochs: int, max_score=None, tol=1e-8):
         self._score_init = 0
         self.score_history = (epochs + 1) * [0]
         early_stopping = isinstance(max_score, (int, float))
 
         for epoch in range(1, epochs + 1):
             score = self.update(observations)
-            # print("Training... epoch = {} out of {}, score = {}.".format(epoch, epochs, score))
             if early_stopping and score > max_score:
                 # print("Early stopping.")
                 break
+
+            if abs(self._score_init - score) < tol:
+                break
+
             self._score_init = score
             self.score_history[epoch] = score
