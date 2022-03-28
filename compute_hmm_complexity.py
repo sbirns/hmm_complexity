@@ -46,7 +46,7 @@ def compute_complexity(word, size=2, hmm_searches=1000, epochs=100, epoch_search
                 # train the hmm on the given word again
                 for _ in range(epoch_searches):
                     if not (score > max(probs) - epsilon):
-                        hmm.train(word, 1)
+                        hmm.train(word, 3)
 
                 if verify:
                     # transmission matrix has dimension (complexity) X (complexity), emission matrix has dimension (complexity) X (size)
@@ -109,6 +109,7 @@ def compute_all_complexity(n, size):
 
     words = get_unique_words(int(n[0]), size)
     for word in words:
+        print('computing HMM complexity of word {}'.format(word))
         compute_complexity(word, size=size)
         print('################################################################')
 
